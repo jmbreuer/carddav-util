@@ -41,7 +41,7 @@ contains the class PyCardDAV and some associated functions and definitions
 from collections import namedtuple
 import requests
 import sys
-import urlparse
+import urllib.parse
 import logging
 import lxml.etree as ET
 import string
@@ -56,7 +56,7 @@ def get_random_href():
     """returns a random href"""
     import random
     tmp_list = list()
-    for _ in xrange(3):
+    for _ in range(3):
         rand_number = random.randint(0, 0x100000000)
         tmp_list.append("{0:x}".format(rand_number))
     return "-".join(tmp_list).upper()
@@ -96,7 +96,7 @@ class PyCardDAV(object):
         urllog = logging.getLogger('requests.packages.urllib3.connectionpool')
         urllog.setLevel(logging.CRITICAL)
 
-        split_url = urlparse.urlparse(resource)
+        split_url = urllib.parse.urlparse(resource)
         url_tuple = namedtuple('url', 'resource base path')
         self.url = url_tuple(resource,
                              split_url.scheme + '://' + split_url.netloc,
@@ -176,7 +176,7 @@ class PyCardDAV(object):
                                     headers=self.headers,
                                     **self._settings)
         raise_for_status( response )
-        return response.content
+        return response.text
 
     def update_vcard(self, card, href, etag):
         """
@@ -238,7 +238,7 @@ class PyCardDAV(object):
             response = requests.put(remotepath, data=card, headers=headers,
                                     **self._settings)
             if response.ok:
-                parsed_url = urlparse.urlparse(remotepath)
+                parsed_url = urllib.parse.urlparse(remotepath)
 
                 if 'etag' not in response.headers:
                     etag = ''
@@ -262,10 +262,11 @@ class PyCardDAV(object):
                                         headers=headers,
                                         **self._settings)
         raise_for_status( response )
-        if response.headers['DAV'].count('addressbook') == 0:
-            raise Exception("URL is not a CardDAV resource")
+        #print ("WebDAV response headers: %s" % response.headers)
+        #if response.headers['DAV'].count('addressbook') == 0:
+        #    raise Exception("URL is not a CardDAV resource")
 
-        return response.content
+        return response.text
 
     @classmethod
     def _process_xml_props(cls, xml):
@@ -275,7 +276,7 @@ class PyCardDAV(object):
         :type xml: str()
         :rtype: dict() key: href, value: etag
         """
-        xml = string.replace( xml, '<?xml version="1.0" encoding="utf-8"?>', '', 1 )
+        xml = str.replace(xml, '<?xml version="1.0" encoding="utf-8"?>', '', 1)
         namespace = "{DAV:}"
 
         element = ET.XML(xml)
